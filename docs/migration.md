@@ -33,7 +33,7 @@ ADR, план и отчёты приёмки (`docs/ai-terminal/*`, `docs/superp
   работает без правок (находит пакет рядом с собой).
 - Имя пакета `@local/dshtrading-connector-transaq` и row id `dsh-trading-ru-connector-transaq`
   не менялись — профили DSH остаются совместимыми.
-- Лицензия — решение владельца, пока не выбрана.
+- LICENSE — MIT (решение владельца, 2026-11-09), как в dsh-trading-transaq.
 
 ## Проверки
 
