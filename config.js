@@ -4,7 +4,7 @@
 
 export const DEFAULTS = Object.freeze({
   enabled: true,
-  gatewayUrl: 'http://127.0.0.1:18090',
+  gatewayUrl: 'http://127.0.0.1:18095',
   tokenRef: 'TERMINAL_API_TOKEN',
   timeoutMs: 5000,
   pollMs: 2000,

@@ -1,4 +1,4 @@
-// node --test dshtrading-connector-transaq/test/
+// node --test test/
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';

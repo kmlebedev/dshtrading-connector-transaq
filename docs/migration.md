@@ -28,14 +28,36 @@ ADR, план и отчёты приёмки (`docs/ai-terminal/*`, `docs/superp
 
 ## Решения
 
-- Раскладка — monorepo-стиль, как в dsh-trading-transaq: пакет сохраняет путь
-  `dshtrading-connector-transaq/`, скрипт — `tools/`, поэтому `tools/dsh-connector-enable.sh`
-  работает без правок (находит пакет рядом с собой).
 - Имя пакета `@local/dshtrading-connector-transaq` и row id `dsh-trading-ru-connector-transaq`
-  не менялись — профили DSH остаются совместимыми.
+  не менялись. Профили, собранные старой обёрткой, требуют удалить висячую `link:`-зависимость
+  на подкаталог `dshtrading-connector-transaq/` и строку коннектора, затем установить bundle
+  заново.
 - LICENSE — MIT (решение владельца, 2026-11-09), как в dsh-trading-transaq.
+
+## Стандартизация 2026-11-09
+
+- Пакет перенесён из подкаталога `dshtrading-connector-transaq/` в корень репозитория
+  (`git mv`, история файлов сохранена). Корень теперь — самостоятельный пакет и DSH-bundle:
+  `index.js`, `config.js`, `gateway-client.js`, `market-data.js`, `symbols.js`, `tools.js`,
+  `trade.js`, `test/`, `package.json`, `cordis.patch.yml`.
+- `package.json` объявляет `dsh.bundle.patch: ./cordis.patch.yml`; патч вставляет строку
+  `dsh-trading-ru-connector-transaq`. Штатная установка — `dsh plugin --profile <name> add
+  '@dshtrading/base@^0.6.3'`, затем `dsh plugin --profile <name> add "file:$PWD"` (или
+  `plugin_manager install_bundle` с target = корень репозитория). `@dshtrading/base` ставится
+  отдельно, потому что DSH не раскрывает транзитивные bundle-зависимости.
+- `tools/dsh-connector-enable.sh` переписан как обёртка над `dsh plugin add` / `remove` с
+  бэкапом профиля; для нестандартных `gatewayUrl`/`tokenRef` он пишет replace-строку без
+  `insert`.
+- Порт по умолчанию выровнен по QUICKSTART: `http://127.0.0.1:18095` (18090 занят бэкендом
+  AI-терминала).
+- Добавлен сайт GitHub Pages: `docs/index.md`, `docs/migration.md`, `mkdocs.yml`,
+  `.github/workflows/pages.yml`; публикация — `https://kmlebedev.github.io/dshtrading-connector-transaq/`.
+  Сайт собирается из `docs/` на `main`, отдельная ветка `pages` не используется.
 
 ## Проверки
 
-- `make test` — 43/43 (Node v26.12.0), до и после правки документов;
-- `bash -n tools/dsh-connector-enable.sh` — ok.
+- `make test` — все тесты `node:test`, включая структурный `test/bundle.test.mjs`;
+- `bash -n tools/dsh-connector-enable.sh` — ok;
+- `mkdocs build --strict` — ok (локально Material 9.7.7 на Python 3.9; CI — Python 3.12);
+- smoke-установка в изолированном `DSH_HOME` (`@dshtrading/base@^0.6.3` + `file:$PWD`) — ok,
+  `dsh --profile smoke --dump-config` показывает строку коннектора.
