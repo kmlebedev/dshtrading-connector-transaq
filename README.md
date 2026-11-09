@@ -40,4 +40,4 @@ make test
 
 Код dsh-trading (PolyForm Noncommercial 1.0.0) здесь не копируется и не импортируется:
 совместимость только структурная. Хост `@dshtrading/base` ставится пользователем из npm.
-Лицензия этого репозитория пока не выбрана (`"license": "UNLICENSED"` в `package.json`).
+Этот репозиторий — [MIT](LICENSE), как и плагин [dsh-trading-transaq](https://github.com/kmlebedev/dsh-trading-transaq).
