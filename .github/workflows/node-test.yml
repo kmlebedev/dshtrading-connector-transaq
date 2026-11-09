@@ -24,4 +24,4 @@ jobs:
         run: bash -n tools/dsh-connector-enable.sh
 
       - name: Run tests
-        run: node --test dshtrading-connector-transaq/test/*.test.mjs
+        run: node --test test/*.test.mjs

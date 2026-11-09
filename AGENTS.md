@@ -6,9 +6,18 @@
 
 ## Что здесь
 
-- `dshtrading-connector-transaq/` — единственный runtime-пакет: ESM
-  `@local/dshtrading-connector-transaq` без зависимостей (`"dependencies": {}`), тесты `node:test`.
-- `tools/dsh-connector-enable.sh` — монтирование в профиль DSH с бэкапом и `--remove`.
+- Корень репозитория — единственный runtime-пакет: ESM
+  `@local/dshtrading-connector-transaq` без зависимостей (`"dependencies": {}`), тесты
+  `node:test` в `test/`.
+- `package.json` объявляет DSH-bundle (`dsh.bundle.patch: ./cordis.patch.yml`), а
+  `cordis.patch.yml` вставляет строку `dsh-trading-ru-connector-transaq`. Установка —
+  штатная: `dsh plugin --profile <name> add @dshtrading/base@^0.6.3`, затем
+  `dsh plugin --profile <name> add "file:$PWD"` (или `plugin_manager install_bundle` с target =
+  корень репозитория).
+- `tools/dsh-connector-enable.sh` — обёртка над этими командами с бэкапом и `--remove`;
+  основной путь установки — bundle, а не ручная правка профиля.
+- `docs/` и `mkdocs.yml` — сайт GitHub Pages (MkDocs Material), workflow
+  `.github/workflows/pages.yml`. `_site/` и `.pages-site/` не коммитить.
 - Go-шлюз `/api/gw/v1/*` и его контракт живут в
   [`kmlebedev/txmlconnector`](https://github.com/kmlebedev/txmlconnector); меняя ожидания к
   полям/единицам, сверяйтесь с `docs/ai-terminal/gateway-v1.md` там.
@@ -16,10 +25,15 @@
 ## Проверки перед коммитом
 
 ```bash
-make test                                  # node --test dshtrading-connector-transaq/test/*.test.mjs
+make test                                  # node --test test/*.test.mjs
 bash -n tools/dsh-connector-enable.sh
+python3 -m mkdocs build --strict            # если установлен mkdocs-material; CI ставит его сам
 git grep -nE 'TC_(PASSWORD|LOGIN)[[:space:]]*=' -- ':!*.md'   # значений секретов быть не должно
 ```
+
+Изменения кода (JS, shell, bundle-манифесты, workflow) проходят ревью вторым субагентом на
+модели `qwencloud/qwen3.8-flash` до коммита; блокеры исправляются, после правок тесты
+повторяются.
 
 ## Жёсткие правила
 
@@ -31,4 +45,6 @@ git grep -nE 'TC_(PASSWORD|LOGIN)[[:space:]]*=' -- ':!*.md'   # значений
 - `TC_LOGIN`, `TC_PASSWORD`, номера счетов/клиентов не попадают в репозиторий, тесты, логи и
   коммиты.
 - Тесты не ходят в сеть (только loopback-фейки) и не требуют Go/DSH.
+- Установка — только штатным bundle-путём. Не дублировать строку коннектора в профиле: для
+  нестандартных `gatewayUrl`/`tokenRef` используйте replace-строку без `insert` с тем же id.
 - Профиль пользователя `~/.dsh` меняется только по явной просьбе пользователя.

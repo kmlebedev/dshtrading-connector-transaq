@@ -3,3 +3,8 @@ node_modules/
 # agent worktrees
 .worktrees/
 .superpowers/
+# GitHub Pages build output
+_site/
+.pages-site/
+site/
+__pycache__/

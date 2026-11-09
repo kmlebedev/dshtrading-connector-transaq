@@ -1,0 +1,35 @@
+{
+  "name": "@local/dshtrading-connector-transaq",
+  "version": "0.1.0",
+  "description": "Read-only TRANSAQ market-data connector for dsh-trading, backed by the local terminal gateway v1.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "*.js",
+    "cordis.patch.yml",
+    "README.md",
+    "QUICKSTART.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmlebedev/dshtrading-connector-transaq.git"
+  },
+  "homepage": "https://kmlebedev.github.io/dshtrading-connector-transaq/",
+  "author": {
+    "name": "kmlebedev",
+    "url": "https://github.com/kmlebedev"
+  },
+  "dependencies": {}
+}
