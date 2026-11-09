@@ -1,9 +1,9 @@
 # dshtrading-connector-transaq
 
-Cordis-плагин, который подключает Go-шлюз `/api/gw/v1/*` (`terminal/api/gateway.go`, контракт —
-[`docs/ai-terminal/gateway-v1.md`](../docs/ai-terminal/gateway-v1.md)) к хосту
+Cordis-плагин, который подключает Go-шлюз `/api/gw/v1/*` (`terminal/api/gateway.go` в [kmlebedev/txmlconnector](https://github.com/kmlebedev/txmlconnector), контракт —
+[`docs/ai-terminal/gateway-v1.md`](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/gateway-v1.md)) к хосту
 [dsh-trading](https://github.com/zhu1090093659/dsh-trading) как рынок `ru`, провайдер `finam`.
-Решение и обоснование — [`docs/ai-terminal/adr-dsh-trading.md`](../docs/ai-terminal/adr-dsh-trading.md) (вариант D).
+Решение и обоснование — [`docs/ai-terminal/adr-dsh-trading.md`](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/adr-dsh-trading.md) (вариант D).
 
 **Быстрый старт в DeepSeek Harness Desktop — [QUICKSTART.md](QUICKSTART.md)** (`tools/dsh-connector-enable.sh`).
 
@@ -25,7 +25,7 @@ Cordis-плагин, который подключает Go-шлюз `/api/gw/v1
 
 ## Требования
 
-Запущенный `bin/terminal` (`make terminal`) и токен API в окружении:
+Запущенный `bin/terminal` из [txmlconnector](https://github.com/kmlebedev/txmlconnector) (`make terminal` в его checkout) и токен API в окружении:
 
 ```bash
 export TERMINAL_API_TOKEN="$(openssl rand -hex 16)"
@@ -72,7 +72,7 @@ bin/terminal -mode offline -addr 127.0.0.1:18090   # или -mode live (нуже
 ## Тесты и приёмка
 
 ```bash
-make connector-test        # node --test dshtrading-connector-transaq/test/
+make test                  # node --test dshtrading-connector-transaq/test/*.test.mjs
 ```
 
 Офлайн-приёмка (выполнена 2026-11-06): `apply()` с фейковым ctx против `bin/terminal -mode offline`
