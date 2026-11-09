@@ -1,0 +1,30 @@
+name: Publish
+
+# Manual npm release of @dshtrading/ru. Requires the NPM_TOKEN repository secret
+# with publish access to the @dshtrading scope. Only runs from main; run it from
+# Actions -> Publish -> Run workflow on the main branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Run tests
+        run: node --test test/*.test.mjs
+      - name: Pack audit
+        run: npm pack --dry-run
+      - name: Publish @dshtrading/ru
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

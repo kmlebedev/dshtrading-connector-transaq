@@ -6,18 +6,21 @@
 
 ## Что здесь
 
-- Корень репозитория — единственный runtime-пакет: ESM
-  `@local/dshtrading-connector-transaq` без зависимостей (`"dependencies": {}`), тесты
-  `node:test` в `test/`.
+- Корень репозитория — единственный runtime-пакет: ESM `@dshtrading/ru` без зависимостей
+  (`"dependencies": {}`), тесты `node:test` в `test/`. Пакет публикуемый: без `private`, с
+  `publishConfig.access: public`; публикация — только по явной просьбе пользователя.
 - `package.json` объявляет DSH-bundle (`dsh.bundle.patch: ./cordis.patch.yml`), а
-  `cordis.patch.yml` вставляет строку `dsh-trading-ru-connector-transaq`. Установка —
-  штатная: `dsh plugin --profile <name> add @dshtrading/base@^0.6.3`, затем
-  `dsh plugin --profile <name> add "file:$PWD"` (или `plugin_manager install_bundle` с target =
-  корень репозитория).
-- `tools/dsh-connector-enable.sh` — обёртка над этими командами с бэкапом и `--remove`;
-  основной путь установки — bundle, а не ручная правка профиля.
+  `cordis.patch.yml` вставляет строку `dsh-trading-ru-connector-transaq`. Штатная установка из
+  npm после публикации: `dsh plugin --profile trading-web add @dshtrading/ru`; из локального
+  checkout'а: `dsh plugin --profile <name> add "file:$PWD"`. `@dshtrading/base` в профиле
+  `trading-web` уже есть; для чистого профиля его ставят отдельно.
+- `tools/dsh-connector-enable.sh` — обёртка над этими командами с бэкапом, удалением legacy
+  `@local/dshtrading-connector-transaq` и `--remove`; основной путь установки — bundle, а не
+  ручная правка профиля.
 - `docs/` и `mkdocs.yml` — сайт GitHub Pages (MkDocs Material), workflow
   `.github/workflows/pages.yml`. `_site/` и `.pages-site/` не коммитить.
+- `.github/workflows/publish.yml` — ручная публикация `@dshtrading/ru` в npm с секретом
+  `NPM_TOKEN`; запускать только по явной просьбе пользователя.
 - Go-шлюз `/api/gw/v1/*` и его контракт живут в
   [`kmlebedev/txmlconnector`](https://github.com/kmlebedev/txmlconnector); меняя ожидания к
   полям/единицам, сверяйтесь с `docs/ai-terminal/gateway-v1.md` там.
@@ -47,4 +50,7 @@ git grep -nE 'TC_(PASSWORD|LOGIN)[[:space:]]*=' -- ':!*.md'   # значений
 - Тесты не ходят в сеть (только loopback-фейки) и не требуют Go/DSH.
 - Установка — только штатным bundle-путём. Не дублировать строку коннектора в профиле: для
   нестандартных `gatewayUrl`/`tokenRef` используйте replace-строку без `insert` с тем же id.
+- Публикация в npm (`npm publish` или workflow Publish) — только по явной
+  просьбе пользователя и только при наличии доступа к scope `@dshtrading` (scope принадлежит
+  upstream dsh-trading).
 - Профиль пользователя `~/.dsh` меняется только по явной просьбе пользователя.

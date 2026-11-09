@@ -1,7 +1,7 @@
-# Quick start: коннектор TRANSAQ в DeepSeek Harness Desktop
+# Quick start: коннектор TRANSAQ в DeepSeek Harness
 
-Как за 5 шагов подключить `dshtrading-connector-transaq` к приложению DeepSeek Harness (DSH)
-Desktop, чтобы агент видел MOEX через инструменты `ru_*`. Подробности о коннекторе — в
+Как за 5 шагов подключить `@dshtrading/ru` к DeepSeek Harness (DSH) Desktop или к профилю
+`trading-web`, чтобы агент видел MOEX через инструменты `ru_*`. Подробности о коннекторе — в
 [README](README.md), контракт шлюза — в
 [gateway-v1.md](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/gateway-v1.md).
 Веб-версия этой инструкции — на
@@ -23,9 +23,9 @@ dry-run, реальной торговли нет.
   git clone https://github.com/kmlebedev/txmlconnector.git
   cd dshtrading-connector-transaq        # команды ниже — из корня этого репозитория
   ```
-- Доступ к npm при первой установке: в профиль ставится хост `@dshtrading/base` 0.6.x
+- Доступ к npm: пакет `@dshtrading/ru` и, для чистого профиля, хост `@dshtrading/base`
   (пакеты dsh-trading распространяются под PolyForm Noncommercial 1.0.0; сам коннектор их код
-  не содержит).
+  не содержит). В профиле `trading-web` `@dshtrading/base` уже установлен.
 - Порт **18095** свободен. 18090 занят бэкендом плагина AI-терминала, если он включён; у того
   бэкенда свой случайный токен, поэтому коннектору нужен отдельный `bin/terminal`.
 
@@ -58,40 +58,60 @@ curl -s -H "X-Terminal-Token: $(cat ~/.config/txmlconnector/gateway-token)" http
 
 Ожидается JSON с `"market":"ru","provider":"finam"`.
 
-## 3. Профиль Desktop
+## 3. Установка в профиль
 
-Закройте DSH Desktop. Коннектор — стандартный DSH-bundle: корневой `package.json` объявляет
-`dsh.bundle.patch: ./cordis.patch.yml`, поэтому штатная установка сама добавляет его в
-`dsh.profile.bundles` и вставляет строку в профиль.
+Коннектор подготовлен для публикации как `@dshtrading/ru` и является стандартным DSH-bundle:
+корневой `package.json` объявляет `dsh.bundle.patch: ./cordis.patch.yml`, поэтому штатная
+установка сама добавляет его в `dsh.profile.bundles` и вставляет строку в профиль. Пока пакет
+не опубликован в npm (нужен доступ к scope `@dshtrading`), используйте локальный checkout
+(`file:$PWD`).
 
-Сначала поставьте хост `@dshtrading/base`: DSH не раскрывает транзитивные bundle-зависимости,
-поэтому его нужно установить отдельной командой.
+### Штатно в dsh-trading (trading-web)
 
-### Вариант 1: CLI
+Профиль `trading-web` уже содержит `@dshtrading/base`:
 
 ```bash
-dsh plugin --profile desktop add '@dshtrading/base@^0.6.3'
+dsh plugin --profile trading-web add @dshtrading/ru
+```
+
+Проверка: `dsh --profile trading-web --dump-config | grep -A6 dsh-trading-ru-connector-transaq`.
+
+### Локальный checkout (DSH Desktop / разработка)
+
+Закройте DSH Desktop. Сначала поставьте хост `@dshtrading/base`, если его ещё нет: DSH не
+раскрывает транзитивные bundle-зависимости.
+
+#### Вариант 1: CLI
+
+```bash
+dsh plugin --profile desktop add '@dshtrading/base@^0.7.0'
 dsh plugin --profile desktop add "file:$PWD"
 ```
 
 `$PWD` — корень этого репозитория. Отдельно править YAML не нужно.
 
-### Вариант 2: GUI
+#### Вариант 2: GUI
 
 В DSH-сессии откройте `plugin_manager` → `install_bundle` и укажите target — абсолютный путь
 к корню этого репозитория. `@dshtrading/base` установите тем же способом или командой CLI
 из варианта 1.
 
-### Вариант 3: скрипт-обёртка
+#### Вариант 3: скрипт-обёртка
 
 ```bash
 tools/dsh-connector-enable.sh
 ```
 
 Скрипт делает бэкап `package.json` и `cordis.patch.yml` профиля рядом с ними
-(`*.connector-<время>`), выполняет те же две команды `dsh plugin add` и умеет `--remove`.
-Порт, имя токена и профиль меняются переменными `GATEWAY_URL`, `TOKEN_REF`, `PROFILE`,
-`DSH_HOME` (см. `tools/dsh-connector-enable.sh --help`).
+(`*.connector-<время>`), выполняет те же две команды `dsh plugin add` (из локального
+checkout'а, `file:`) и умеет `--remove`. Порт, имя токена и профиль меняются переменными
+`GATEWAY_URL`, `TOKEN_REF`, `PROFILE`, `DSH_HOME` (см. `tools/dsh-connector-enable.sh --help`).
+Для dsh-trading используйте `PROFILE=trading-web`.
+
+> **Переход со старой установки.** Прежняя версия ставилась как
+> `@local/dshtrading-connector-transaq`, в том числе через `link:` на подкаталог
+> `dshtrading-connector-transaq/`. Удалите старую зависимость и строку коннектора из профиля,
+> затем установите `@dshtrading/ru`; скрипт-обёртка делает это автоматически.
 
 ### Что появляется в профиле
 
@@ -100,7 +120,7 @@ Bundle-патч вставляет строку с настройками по �
 ```yaml
 - insert:
     - id: dsh-trading-ru-connector-transaq
-      name: '@local/dshtrading-connector-transaq'
+      name: '@dshtrading/ru'
       config:
         enabled: true
         gatewayUrl: 'http://127.0.0.1:18095'
@@ -122,12 +142,9 @@ bundle:
 Не добавляйте вторую `insert`-строку с тем же id: получится дубликат row id, и DSH не
 запустится.
 
-> **Переход со старой установки.** Если профиль ставился прежней версией
-> `tools/dsh-connector-enable.sh`, в `~/.dsh/profiles/desktop/package.json` могла остаться
-> зависимость `@local/dshtrading-connector-transaq` вида
-> `link:.../dshtrading-connector-transaq`. После переноса пакета в корень этот путь больше не
-> существует: удалите старую зависимость и строку коннектора из профиля, затем установите
-> bundle заново по шагам выше.
+> **Для профиля `trading-web`.** Шаги 4–5 относятся к DSH Desktop. В `trading-web` токен
+> передаётся окружением или credential-сервисом хоста; после `dsh plugin add` перезапустите
+> `dsh --profile trading-web`.
 
 ## 4. Токен для приложения
 
@@ -161,10 +178,10 @@ osascript -e 'quit app "DeepSeek Harness"'; open -a "DeepSeek Harness"
 | `TRADING_NETWORK` | Шлюз не запущен или не на 18095: шаг 2, проверка `curl` |
 | `TRADING_SYMBOL_NOT_FOUND` | Инструмента нет в universe шлюза: `ru_list_instruments` покажет доступные |
 | `TRADING_LIVE_TRADING_DISABLED` | Попытка `dryRun: false`; живая торговля отключена намеренно |
-| DSH не стартует после установки | Удалите коннектор: `dsh plugin --profile desktop remove @local/dshtrading-connector-transaq`; при ручной правке восстановите `package.json` / `cordis.patch.yml` из бэкапа или выполните `tools/dsh-connector-enable.sh --remove` |
+| DSH не стартует после установки | Удалите коннектор: `dsh plugin --profile desktop remove @dshtrading/ru`; при ручной правке восстановите `package.json` / `cordis.patch.yml` из бэкапа или выполните `tools/dsh-connector-enable.sh --remove` |
 | Строка коннектора задвоилась | Не добавляйте `insert` с тем же id вручную; для нестандартных настроек используйте replace-строку без `insert` |
 
-Отключить коннектор: `dsh plugin --profile desktop remove @local/dshtrading-connector-transaq`
+Отключить коннектор: `dsh plugin --profile desktop remove @dshtrading/ru`
 (или `tools/dsh-connector-enable.sh --remove`), затем перезапуск DSH. Хост `@dshtrading/base`
 при этом остаётся установленным; убрать его — `dsh plugin --profile desktop remove @dshtrading/base`.
 
@@ -186,13 +203,14 @@ osascript -e 'quit app "DeepSeek Harness"'; open -a "DeepSeek Harness"
   дублирует. Хост, запущенный из этого профиля против `bin/terminal -mode offline` на 18095,
   зарегистрировал `ru/finam` в `tradingMarketDataRegistry` и `tradingTradeRegistry`, все 6
   инструментов `ru_*` доступны.
-- 2026-11-09: стандартная bundle-установка в изолированном `DSH_HOME`
-  (`@dshtrading/base@^0.6.3` и `file:$PWD`) — pnpm поставил оба пакета,
-  `dsh.profile.bundles` содержит `@dshtrading/base` и
-  `@local/dshtrading-connector-transaq`, `dsh --profile smoke --dump-config` показывает строку
-  `dsh-trading-ru-connector-transaq` с `gatewayUrl: http://127.0.0.1:18095`.
+- 2026-11-09: стандартная bundle-установка `@dshtrading/ru` в изолированных `DSH_HOME`
+  (`@dshtrading/base@^0.6.3` и `@dshtrading/base@^0.7.0`, `file:$PWD`) — pnpm поставил оба
+  пакета, `dsh.profile.bundles` содержит `@dshtrading/base` и `@dshtrading/ru`,
+  `dsh --profile smoke --dump-config` показывает строку `dsh-trading-ru-connector-transaq`
+  с `gatewayUrl: http://127.0.0.1:18095`.
 - 2026-11-06: агентский вызов `ru_get_ticker SBER` → `SBER.TQBR` в реальном хосте dsh-trading
   ([приёмка](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/acceptance-pr67-2026-11-06.md)).
-- **Не проверено:** сам профиль `desktop` приложения, передача токена через
-  `launchctl setenv` и установка через GUI `plugin_manager`; CLI-путь `dsh plugin add`
-  проверен smoke-тестом.
+- **Не проверено:** сам профиль `desktop` приложения, передача токена через `launchctl setenv`
+  и установка через GUI `plugin_manager`; CLI-путь `dsh plugin add` проверен smoke-тестом из
+  локального checkout'а. Установка из npm (`dsh plugin add @dshtrading/ru`) не проверена, пока
+  пакет не опубликован и нет доступа к scope `@dshtrading`.
