@@ -2,7 +2,7 @@
 
 Как за 5 шагов подключить `dshtrading-connector-transaq` к приложению DeepSeek Harness (DSH)
 Desktop, чтобы агент видел MOEX через инструменты `ru_*`. Подробности о коннекторе — в
-[README](README.md), контракт шлюза — в [gateway-v1.md](../docs/ai-terminal/gateway-v1.md).
+[README](README.md), контракт шлюза — в [gateway-v1.md](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/gateway-v1.md).
 
 Схема: `bin/terminal` (Go, TRANSAQ) отдаёт read-only шлюз `/api/gw/v1/*` на loopback, а
 коннектор в профиле Desktop (`~/.dsh/profiles/desktop`) регистрирует рынок `ru` / провайдер
@@ -12,7 +12,14 @@ dry-run, реальной торговли нет.
 ## Требования
 
 - macOS, DeepSeek Harness Desktop **0.2.2-rc.1** (`dsh --version`), Go 1.27+, `openssl`.
-- Checkout этого репозитория (команды ниже — из его корня).
+- Два checkout'а рядом: этот репозиторий (коннектор) и
+  [kmlebedev/txmlconnector](https://github.com/kmlebedev/txmlconnector) (Go-шлюз `bin/terminal`):
+
+  ```bash
+  git clone https://github.com/kmlebedev/dshtrading-connector-transaq.git
+  git clone https://github.com/kmlebedev/txmlconnector.git
+  cd dshtrading-connector-transaq        # команды ниже — из корня этого репозитория
+  ```
 - Доступ к npm при первой установке: скрипт ставит в профиль хост `@dshtrading/base` 0.6.x
   (пакеты dsh-trading распространяются под PolyForm Noncommercial 1.0.0; сам коннектор их код
   не содержит).
@@ -31,13 +38,13 @@ mkdir -p ~/.config/txmlconnector
 ## 2. Шлюз
 
 ```bash
-make terminal
+make -C ../txmlconnector terminal
 TERMINAL_API_TOKEN="$(cat ~/.config/txmlconnector/gateway-token)" \
-  bin/terminal -mode offline -addr 127.0.0.1:18095 -llm off
+  ../txmlconnector/bin/terminal -mode offline -addr 127.0.0.1:18095 -llm off
 ```
 
 `-mode offline` — встроенный снимок демо-данных (`source: "seed"`). Для живых котировок —
-`-mode live` с `TRANSAQ_*`/`TC_*` в окружении (см. [docs/ai-terminal/README.md](../docs/ai-terminal/README.md));
+`-mode live` с `TRANSAQ_*`/`TC_*` в окружении (см. [docs/ai-terminal/README.md](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/README.md));
 коннектор эти переменные не читает. Окно терминала со шлюзом оставьте открытым.
 
 Проверка в другом окне:
@@ -132,6 +139,6 @@ osascript -e 'quit app "DeepSeek Harness"'; open -a "DeepSeek Harness"
   `bin/terminal -mode offline` на 18095, зарегистрировал `ru/finam` в `tradingMarketDataRegistry`
   и `tradingTradeRegistry`, все 6 инструментов `ru_*` доступны.
 - 2026-11-06: агентский вызов `ru_get_ticker SBER` → `SBER.TQBR` в реальном хосте dsh-trading
-  ([приёмка](../docs/ai-terminal/acceptance-pr67-2026-11-06.md)).
+  ([приёмка](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/acceptance-pr67-2026-11-06.md)).
 - **Не проверено:** сам профиль `desktop` приложения (скрипт на нём не запускался) и передача
   токена через `launchctl setenv` в DSH Desktop.
