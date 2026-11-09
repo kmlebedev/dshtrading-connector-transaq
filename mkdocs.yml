@@ -1,5 +1,5 @@
 site_name: dshtrading-connector-transaq
-site_description: "Коннектор TRANSAQ для DeepSeek Harness: рынок ru / провайдер finam и read-only инструменты ru_*"
+site_description: "Пакет @dshtrading/ru: коннектор TRANSAQ для DeepSeek Harness, рынок ru / провайдер finam и read-only инструменты ru_*"
 site_url: https://kmlebedev.github.io/dshtrading-connector-transaq/
 repo_url: https://github.com/kmlebedev/dshtrading-connector-transaq
 repo_name: kmlebedev/dshtrading-connector-transaq

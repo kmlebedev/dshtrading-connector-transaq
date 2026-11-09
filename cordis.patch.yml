@@ -1,11 +1,20 @@
-# DeepSeek Harness bundle for the read-only TRANSAQ connector.
+# DeepSeek Harness bundle for the read-only TRANSAQ connector (market ru / provider finam).
 #
-# Installed as a standard DSH bundle (`dsh plugin add file:<repo>` or
-# `plugin_manager install_bundle`). The row registers the `ru` / `finam`
-# market in dsh-trading registries and exposes the six read-only ru_* tools.
+# After publishing to npm (requires access to the @dshtrading scope), install as
+# a standard DSH bundle:
+#
+#   dsh plugin --profile trading-web add @dshtrading/ru
+#
+# Until then, install from a local checkout:
+#
+#   dsh plugin --profile desktop add "file:<repo>"
+#
+# The row registers the `ru` / `finam` market in dsh-trading registries and
+# exposes the six read-only ru_* tools.
 #
 # `@dshtrading/base` is a separate bundle: DSH does not expand transitive
-# bundle dependencies, so install it explicitly before this one.
+# bundle dependencies, so the trading-web profile must already have it (the
+# standard dsh-trading profile does). For a fresh profile add it explicitly.
 #
 # Non-default gatewayUrl / tokenRef: override the row in the profile patch
 # without `insert` (the same id replaces this row):
@@ -17,7 +26,7 @@
 #       tokenRef: TERMINAL_API_TOKEN
 - insert:
     - id: dsh-trading-ru-connector-transaq
-      name: '@local/dshtrading-connector-transaq'
+      name: '@dshtrading/ru'
       config:
         enabled: true
         gatewayUrl: 'http://127.0.0.1:18095'

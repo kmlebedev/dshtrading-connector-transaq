@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Install the read-only TRANSAQ connector (dshtrading-connector-transaq) into a
-# DSH profile as a standard bundle. By default the profile is the one DeepSeek
-# Harness Desktop boots (~/.dsh/profiles/desktop).
+# Install the read-only TRANSAQ connector as the `@dshtrading/ru` DSH bundle.
+# By default the profile is the one DeepSeek Harness Desktop boots
+# (~/.dsh/profiles/desktop); for dsh-trading use PROFILE=trading-web.
 #
-# The connector package declares `dsh.bundle.patch`, so `dsh plugin add` mounts
-# its row automatically. This helper only wraps the standard commands and,
-# for non-default settings, writes a profile-level override row (same id, no
-# `insert`) for gatewayUrl / tokenRef. Idempotent; backs up package.json and
+# The package declares `dsh.bundle.patch`, so `dsh plugin add` mounts its row
+# automatically. This helper wraps the standard commands and, for non-default
+# settings, writes a profile-level override row (same id, no `insert`) for
+# gatewayUrl / tokenRef. Idempotent; backs up package.json and
 # cordis.patch.yml next to themselves before every change.
 #
 #   tools/dsh-connector-enable.sh            # enable
@@ -14,7 +14,7 @@
 #
 # Environment (all optional):
 #   DSH_HOME       DSH home (default ~/.dsh)
-#   PROFILE        profile name (default desktop)
+#   PROFILE        profile name (default desktop; use trading-web for dsh-trading)
 #   GATEWAY_URL    loopback URL of bin/terminal (default http://127.0.0.1:18095;
 #                  18090 is taken by the AI-terminal plugin's own backend)
 #   TOKEN_REF      env/credential name holding the gateway token
@@ -43,10 +43,11 @@ GATEWAY_URL="${GATEWAY_URL:-http://127.0.0.1:18095}"
 TOKEN_REF="${TOKEN_REF:-TERMINAL_API_TOKEN}"
 DSH="${DSH:-$(command -v dsh || echo /usr/local/bin/dsh)}"
 P="$DSH_HOME/profiles/$PROFILE"
-PKG="@local/dshtrading-connector-transaq"
+PKG="@dshtrading/ru"
+LEGACY_PKG="@local/dshtrading-connector-transaq"
 ROW_ID="dsh-trading-ru-connector-transaq"
 HOST="@dshtrading/base"
-HOST_SPEC="@dshtrading/base@^0.6.3"
+HOST_SPEC="@dshtrading/base@^0.7.0"
 
 if [ ! -f "$REPO/index.js" ] || [ ! -f "$REPO/cordis.patch.yml" ]; then
   echo "error: connector bundle not found at $REPO (need index.js and cordis.patch.yml)" >&2
@@ -60,6 +61,28 @@ if [ ! -f "$P/package.json" ]; then
   echo "error: DSH profile not found: $P (start DSH once, or run: $DSH plugin --profile $PROFILE list)" >&2
   exit 1
 fi
+
+# The package.json of the profile lists direct dependencies; base is optional
+# for the connector tools but required for the ru/finam registry integration.
+python3 - "$P/package.json" <<'PY' || exit 1
+import json, sys
+try:
+    json.load(open(sys.argv[1]))
+except Exception as exc:
+    sys.exit(f"error: invalid profile package.json: {exc}")
+PY
+
+profile_has_dep() {
+  python3 - "$P/package.json" "$1" <<'PY'
+import json, sys
+payload = json.load(open(sys.argv[1]))
+name = sys.argv[2]
+deps = payload.get("dependencies", {})
+bundles = payload.get("dsh", {}).get("profile", {}).get("bundles", [])
+in_bundles = any(bundle == name or bundle.startswith(name + "@") for bundle in bundles)
+sys.exit(0 if name in deps or in_bundles else 1)
+PY
+}
 
 # Validate the values the plugin will receive; the same rules live in config.js.
 python3 - "$GATEWAY_URL" "$TOKEN_REF" <<'PY' || exit 2
@@ -89,12 +112,23 @@ cp "$P/package.json" "$P/package.json.connector-$TS" || exit 1
 echo "backup: $P/package.json.connector-$TS"
 
 if [ "${SKIP_INSTALL:-0}" != "1" ] && [ "$MODE" = enable ]; then
-  echo "install host bundle $HOST_SPEC..."
-  # shellcheck disable=SC2086
-  "$DSH" plugin --profile "$PROFILE" add "$HOST_SPEC" ${DSH_PLUGIN_ARGS:-} || {
-    echo "install failed; restore with: cp $P/package.json.connector-$TS $P/package.json" >&2
-    exit 1
-  }
+  if profile_has_dep "$LEGACY_PKG"; then
+    echo "remove legacy $LEGACY_PKG..."
+    "$DSH" plugin --profile "$PROFILE" remove "$LEGACY_PKG" || {
+      echo "failed to remove legacy $LEGACY_PKG; remove it manually before installing $PKG" >&2
+      exit 1
+    }
+  fi
+  if profile_has_dep "$HOST"; then
+    echo "host bundle $HOST already installed; skip"
+  else
+    echo "install host bundle $HOST_SPEC..."
+    # shellcheck disable=SC2086
+    "$DSH" plugin --profile "$PROFILE" add "$HOST_SPEC" ${DSH_PLUGIN_ARGS:-} || {
+      echo "install failed; restore with: cp $P/package.json.connector-$TS $P/package.json" >&2
+      exit 1
+    }
+  fi
   echo "install connector bundle $PKG from $REPO..."
   # shellcheck disable=SC2086
   "$DSH" plugin --profile "$PROFILE" add "file:$REPO" ${DSH_PLUGIN_ARGS:-} || {
@@ -152,12 +186,23 @@ if patch:
 PY
 
 if [ "${SKIP_INSTALL:-0}" != "1" ] && [ "$MODE" = remove ]; then
-  echo "remove connector bundle $PKG..."
-  "$DSH" plugin --profile "$PROFILE" remove "$PKG" || {
-    echo "warning: failed to remove $PKG from $PROFILE; the profile override was removed" >&2
-    echo "         restore package.json with: cp $P/package.json.connector-$TS $P/package.json" >&2
-    exit 1
-  }
+  if profile_has_dep "$PKG"; then
+    echo "remove connector bundle $PKG..."
+    "$DSH" plugin --profile "$PROFILE" remove "$PKG" || {
+      echo "warning: failed to remove $PKG from $PROFILE; the profile override was removed" >&2
+      echo "         restore package.json with: cp $P/package.json.connector-$TS $P/package.json" >&2
+      exit 1
+    }
+  else
+    echo "$PKG is not installed; skip"
+  fi
+  if profile_has_dep "$LEGACY_PKG"; then
+    echo "remove legacy $LEGACY_PKG..."
+    "$DSH" plugin --profile "$PROFILE" remove "$LEGACY_PKG" || {
+      echo "warning: failed to remove legacy $LEGACY_PKG from $PROFILE" >&2
+      exit 1
+    }
+  fi
 fi
 
 if [ "$MODE" = enable ]; then

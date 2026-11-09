@@ -28,10 +28,10 @@ ADR, план и отчёты приёмки (`docs/ai-terminal/*`, `docs/superp
 
 ## Решения
 
-- Имя пакета `@local/dshtrading-connector-transaq` и row id `dsh-trading-ru-connector-transaq`
-  не менялись. Профили, собранные старой обёрткой, требуют удалить висячую `link:`-зависимость
-  на подкаталог `dshtrading-connector-transaq/` и строку коннектора, затем установить bundle
-  заново.
+- Имя пакета менялось: `@local/dshtrading-connector-transaq` → `@dshtrading/ru`; row id
+  `dsh-trading-ru-connector-transaq` сохранён. Профили со старой зависимостью требуют удалить
+  `link:`-зависимость на подкаталог `dshtrading-connector-transaq/` и строку коннектора, затем
+  установить `@dshtrading/ru`; скрипт-обёртка делает это автоматически.
 - LICENSE — MIT (решение владельца, 2026-11-09), как в dsh-trading-transaq.
 
 ## Стандартизация 2026-11-09
@@ -41,10 +41,11 @@ ADR, план и отчёты приёмки (`docs/ai-terminal/*`, `docs/superp
   `index.js`, `config.js`, `gateway-client.js`, `market-data.js`, `symbols.js`, `tools.js`,
   `trade.js`, `test/`, `package.json`, `cordis.patch.yml`.
 - `package.json` объявляет `dsh.bundle.patch: ./cordis.patch.yml`; патч вставляет строку
-  `dsh-trading-ru-connector-transaq`. Штатная установка — `dsh plugin --profile <name> add
-  '@dshtrading/base@^0.6.3'`, затем `dsh plugin --profile <name> add "file:$PWD"` (или
-  `plugin_manager install_bundle` с target = корень репозитория). `@dshtrading/base` ставится
-  отдельно, потому что DSH не раскрывает транзитивные bundle-зависимости.
+  `dsh-trading-ru-connector-transaq`. Штатная установка из npm —
+  `dsh plugin --profile trading-web add @dshtrading/ru`; из локального checkout'а —
+  `dsh plugin --profile <name> add "file:$PWD"` (или `plugin_manager install_bundle` с target =
+  корень репозитория). `@dshtrading/base` в профиле `trading-web` уже есть; для чистого профиля
+  его ставят отдельно, потому что DSH не раскрывает транзитивные bundle-зависимости.
 - `tools/dsh-connector-enable.sh` переписан как обёртка над `dsh plugin add` / `remove` с
   бэкапом профиля; для нестандартных `gatewayUrl`/`tokenRef` он пишет replace-строку без
   `insert`.
@@ -54,10 +55,26 @@ ADR, план и отчёты приёмки (`docs/ai-terminal/*`, `docs/superp
   `.github/workflows/pages.yml`; публикация — `https://kmlebedev.github.io/dshtrading-connector-transaq/`.
   Сайт собирается из `docs/` на `main`, отдельная ветка `pages` не используется.
 
+## Пакет `@dshtrading/ru` (2026-11-09)
+
+- Пакет переименован из `@local/dshtrading-connector-transaq` в `@dshtrading/ru`, чтобы его
+  можно было публиковать и ставить штатно:
+  `dsh plugin --profile trading-web add @dshtrading/ru`.
+- Снят `private`, добавлен `publishConfig.access: public`. Публикация —
+  `npm publish` или ручной workflow **Publish** с секретом `NPM_TOKEN`.
+  Scope `@dshtrading` принадлежит upstream dsh-trading; без доступа к нему publish вернёт 403.
+  В текущем окружении npm-аутентификация не настроена, поэтому публикация в PR не выполнялась.
+- `cordis.patch.yml` ссылается на `@dshtrading/ru`; row id
+  `dsh-trading-ru-connector-transaq` не менялся.
+- `tools/dsh-connector-enable.sh` при enable удаляет legacy
+  `@local/dshtrading-connector-transaq`, если он был установлен, и не трогает уже
+  установленный `@dshtrading/base`.
+
 ## Проверки
 
 - `make test` — все тесты `node:test`, включая структурный `test/bundle.test.mjs`;
 - `bash -n tools/dsh-connector-enable.sh` — ok;
 - `mkdocs build --strict` — ok (локально Material 9.7.7 на Python 3.9; CI — Python 3.12);
-- smoke-установка в изолированном `DSH_HOME` (`@dshtrading/base@^0.6.3` + `file:$PWD`) — ok,
-  `dsh --profile smoke --dump-config` показывает строку коннектора.
+- smoke-установка в изолированном `DSH_HOME` (`@dshtrading/base@^0.6.3` и
+  `@dshtrading/base@^0.7.0` + `file:$PWD`) — ok, `dsh --profile smoke --dump-config` показывает
+  строку коннектора `@dshtrading/ru`.
