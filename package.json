@@ -1,8 +1,7 @@
 {
-  "name": "@local/dshtrading-connector-transaq",
+  "name": "@dshtrading/ru",
   "version": "0.1.0",
-  "description": "Read-only TRANSAQ market-data connector for dsh-trading, backed by the local terminal gateway v1.",
-  "private": true,
+  "description": "RU market bundle for dsh-trading: read-only TRANSAQ connector for MOEX (market ru / provider finam).",
   "license": "MIT",
   "type": "module",
   "engines": { "node": ">=24" },
@@ -22,6 +21,9 @@
       "patch": "./cordis.patch.yml"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kmlebedev/dshtrading-connector-transaq.git"
@@ -31,5 +33,12 @@
     "name": "kmlebedev",
     "url": "https://github.com/kmlebedev"
   },
+  "keywords": [
+    "dsh",
+    "dsh-trading",
+    "transaq",
+    "moex",
+    "trading"
+  ],
   "dependencies": {}
 }

@@ -11,19 +11,24 @@ const activePatch = patch
   .filter((line) => !line.trimStart().startsWith('#'))
   .join('\n');
 
-test('package declares the DSH bundle patch and ships it', () => {
-  assert.equal(pkg.name, '@local/dshtrading-connector-transaq');
+test('package is a publishable DSH bundle and ships the patch', () => {
+  assert.equal(pkg.name, '@dshtrading/ru');
+  assert.notEqual(pkg.private, true);
+  assert.equal(pkg.publishConfig?.access, 'public');
   assert.equal(pkg.dsh?.bundle?.patch, './cordis.patch.yml');
   assert.ok(Array.isArray(pkg.files) && pkg.files.includes('cordis.patch.yml'));
+  assert.ok(pkg.files.includes('*.js'));
   assert.ok(existsSync(patchUrl));
 });
 
 test('bundle patch inserts exactly one connector row with the standard defaults', () => {
   assert.match(activePatch, /^\s*- insert:/m);
+  assert.equal((activePatch.match(/^\s*- id:/gm) ?? []).length, 1);
   assert.equal((activePatch.match(/id: dsh-trading-ru-connector-transaq/g) ?? []).length, 1);
-  assert.match(activePatch, /name: '@local\/dshtrading-connector-transaq'/);
+  assert.match(activePatch, /name: ['"]@dshtrading\/ru['"]/);
   assert.match(activePatch, /gatewayUrl: 'http:\/\/127\.0\.0\.1:18095'/);
   assert.match(activePatch, /tokenRef: TERMINAL_API_TOKEN/);
+  assert.doesNotMatch(activePatch, /@local\//);
 });
 
 test('code default matches the bundle and QUICKSTART port', () => {

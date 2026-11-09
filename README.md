@@ -6,6 +6,11 @@ Cordis-плагин, который подключает рынок MOEX (Finam/
 (тикер, свечи, стакан, лента, инструменты, бумажный счёт). Заявки только dry-run, реальной
 торговли нет.
 
+Пакет подготовлен для публикации как `@dshtrading/ru`; после публикации он ставится штатно:
+`dsh plugin --profile trading-web add @dshtrading/ru` (в профиле `trading-web` уже есть
+`@dshtrading/base`). До публикации используйте локальный checkout:
+`dsh plugin --profile desktop add "file:$PWD"`.
+
 **Документация: [kmlebedev.github.io/dshtrading-connector-transaq](https://kmlebedev.github.io/dshtrading-connector-transaq/)** ·
 **Быстрый старт: [QUICKSTART.md](QUICKSTART.md)**
 
@@ -28,7 +33,7 @@ Cordis-плагин, который подключает рынок MOEX (Finam/
 
 | Путь | Что |
 |---|---|
-| `index.js`, `config.js`, `gateway-client.js`, `market-data.js`, `symbols.js`, `tools.js`, `trade.js` | пакет `@local/dshtrading-connector-transaq`: ESM без зависимостей |
+| `index.js`, `config.js`, `gateway-client.js`, `market-data.js`, `symbols.js`, `tools.js`, `trade.js` | пакет `@dshtrading/ru`: ESM без зависимостей |
 | [`package.json`](package.json) | манифест пакета и DSH-bundle (`dsh.bundle.patch`) |
 | [`cordis.patch.yml`](cordis.patch.yml) | bundle-патч: вставляет строку `dsh-trading-ru-connector-transaq` |
 | [`test/`](test/) | тесты `node:test`, без сети и без Go |
@@ -37,6 +42,7 @@ Cordis-плагин, который подключает рынок MOEX (Finam/
 | [`docs/`](docs/) | исходники сайта GitHub Pages |
 | [`docs/migration.md`](docs/migration.md) | происхождение репозитория и сохранённая история |
 | [`mkdocs.yml`](mkdocs.yml), [`.github/workflows/pages.yml`](.github/workflows/pages.yml) | сборка и публикация сайта |
+| [`.github/workflows/publish.yml`](.github/workflows/publish.yml) | ручная публикация `@dshtrading/ru` в npm |
 | [`AGENTS.md`](AGENTS.md) | инструкция для агентов, работающих в репозитории |
 | [`LICENSE`](LICENSE) | MIT |
 
@@ -66,14 +72,25 @@ bin/terminal -mode offline -addr 127.0.0.1:18095   # или -mode live (нуже
 
 ## Установка в DSH
 
-Пакет — стандартный DSH-bundle: корневой `package.json` объявляет
-`dsh.bundle.patch: ./cordis.patch.yml`, а патч вставляет строку коннектора. Хост
-`@dshtrading/base` ставится отдельно: DSH не раскрывает транзитивные bundle-зависимости.
+Пакет публикуется как `@dshtrading/ru` и является стандартным DSH-bundle: `package.json`
+объявляет `dsh.bundle.patch: ./cordis.patch.yml`, а патч вставляет строку коннектора. Профиль
+`trading-web` из dsh-trading уже содержит `@dshtrading/base`; для чистого профиля добавьте его
+отдельно — DSH не раскрывает транзитивные bundle-зависимости.
+
+### Из npm
+
+```bash
+dsh plugin --profile trading-web add @dshtrading/ru
+```
+
+Проверка: `dsh --profile trading-web --dump-config | grep -A6 dsh-trading-ru-connector-transaq`.
+
+### Из локального checkout (Desktop / разработка)
 
 ```bash
 git clone https://github.com/kmlebedev/dshtrading-connector-transaq.git
 cd dshtrading-connector-transaq
-dsh plugin --profile desktop add '@dshtrading/base@^0.6.3'
+dsh plugin --profile desktop add '@dshtrading/base@^0.7.0'   # если base ещё нет
 dsh plugin --profile desktop add "file:$PWD"
 ```
 
@@ -88,19 +105,21 @@ tools/dsh-connector-enable.sh
 Он делает бэкап `package.json` и `cordis.patch.yml` профиля, выполняет те же команды
 `dsh plugin add` и умеет `--remove`. Порт, имя токена и профиль меняются переменными
 `GATEWAY_URL`, `TOKEN_REF`, `PROFILE`, `DSH_HOME` (см. `tools/dsh-connector-enable.sh --help`).
+Для профиля dsh-trading используйте `PROFILE=trading-web`.
 
-> **Переход со старой установки.** Если профиль ставился прежней версией скрипта, в
-> `~/.dsh/profiles/desktop/package.json` могла остаться зависимость
-> `@local/dshtrading-connector-transaq` вида `link:.../dshtrading-connector-transaq`.
-> После переноса пакета в корень этот путь больше не существует: удалите старую зависимость и
-> строку коннектора из профиля, затем установите bundle заново.
+> **Переход со старой установки.** Прежняя версия ставилась как
+> `@local/dshtrading-connector-transaq`, в том числе через `link:` на подкаталог
+> `dshtrading-connector-transaq/`. Удалите старую зависимость и строку коннектора из профиля,
+> затем установите `@dshtrading/ru`; скрипт-обёртка делает это автоматически, но ставит из
+> локального checkout'а (`file:`). Для npm-версии используйте
+> `dsh plugin --profile trading-web add @dshtrading/ru` после публикации.
 
 Bundle-патч вставляет строку с настройками по умолчанию:
 
 ```yaml
 - insert:
     - id: dsh-trading-ru-connector-transaq
-      name: '@local/dshtrading-connector-transaq'
+      name: '@dshtrading/ru'
       config:
         enabled: true
         gatewayUrl: 'http://127.0.0.1:18095'
@@ -118,6 +137,20 @@ bundle:
     gatewayUrl: 'http://127.0.0.1:18095'
     tokenRef: TERMINAL_API_TOKEN
 ```
+
+## Публикация
+
+Пакет уже без `private` и с `publishConfig.access: public`:
+
+```bash
+npm publish
+```
+
+Или вручную запустить workflow **Publish** (Actions → Publish → Run workflow); ему нужен
+секрет `NPM_TOKEN` с доступом к scope `@dshtrading`. Scope принадлежит upstream dsh-trading;
+без доступа к нему `npm publish` вернёт 403. Пока пакет не опубликован, команда
+`dsh plugin --profile trading-web add @dshtrading/ru` даёт 404 — используйте локальный
+checkout (`file:$PWD`). После публикации npm-команда работает без checkout'а.
 
 ## Конфигурация
 
@@ -169,9 +202,10 @@ make test                  # node --test test/*.test.mjs
 отдаёт 400 `unknown market "ru"` (вне scope PR). Полный отчёт:
 [`acceptance-pr67-2026-11-06.md`](https://github.com/kmlebedev/txmlconnector/blob/main/docs/ai-terminal/acceptance-pr67-2026-11-06.md).
 
-Стандартная bundle-установка проверена 2026-11-09 в изолированном `DSH_HOME`
-(`@dshtrading/base@^0.6.3` + `file:$PWD`): `dsh.profile.bundles` содержит оба пакета,
-`dsh --profile smoke --dump-config` показывает строку `dsh-trading-ru-connector-transaq`.
+Стандартная bundle-установка `@dshtrading/ru` проверена 2026-11-09 в изолированных `DSH_HOME`
+с `@dshtrading/base@^0.6.3` и `@dshtrading/base@^0.7.0`: `dsh.profile.bundles` содержит
+`@dshtrading/base` и `@dshtrading/ru`, `dsh --profile smoke --dump-config` показывает строку
+`dsh-trading-ru-connector-transaq`.
 
 ## GitHub Pages
 
