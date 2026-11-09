@@ -1,0 +1,27 @@
+name: Node Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run connector tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check the enable helper
+        run: bash -n tools/dsh-connector-enable.sh
+
+      - name: Run tests
+        run: node --test dshtrading-connector-transaq/test/*.test.mjs
